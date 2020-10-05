@@ -14,3 +14,15 @@ Here are some ideas to get you started:
 - 😄 Pronouns: ...
 - ⚡ Fun fact: ...
 -->
+
+#### Install
+
+As requirement it is needed to install MySQL Connector for Python.
+
+In Windows:
+
+pip install mysql-connector-python
+
+#### Reference
+
+https://dev.mysql.com/doc/connector-python/en/connector-python-installation-binary.html

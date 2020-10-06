@@ -32,6 +32,9 @@ class Command:
         self.name = "name"
         self.description = "description"
 
+    def help(self):
+        print("")
+
     def run(self, commands):
         pass
 
@@ -42,17 +45,18 @@ class CommandConnect(Command):
         self.name = "connect"
         self.description = "Testing database connection"
 
+    def help(self):
+        print("connect user:password@host:port/database")
+
     def run(self, commands):
         dsn = sys.argv[2]
         user = dsn[0:dsn.find(":")]
         password = dsn[dsn.find(":")+1:dsn.find("@")]
-        if dsn.find("/") == -1:
-            host = dsn[dsn.find("@")+1:]
-        else:
-            host = dsn[dsn.find("@")+1:dsn.find("/")]
-        print(host)
+        host = dsn[dsn.find("@")+1:dsn.find(":", dsn.find(":") + 1)]
+        port = dsn[dsn.find(":", dsn.find(":") + 1) + 1:dsn.find("/")]
+        database = dsn[dsn.find("/")+1:]
         try:
-            conn = mysql.connector.connect(user=user, password=password, host=host)
+            conn = mysql.connector.connect(user=user, password=password, host=host, port=port, database=database)
             print("PASS")
         except mysql.connector.Error as err:
             print("FAIL {} {}".format(err.errno, err.msg))
@@ -65,6 +69,10 @@ class CommandHelp(Command):
         super().__init__()
         self.name = "help"
         self.description = "Display help message"
+
+    def help(self):
+        print("help          - print main help with list of supported commands")
+        print("help commands - display detailed help for specified command")
 
     def run(self, commands):
         print("Usage:")
@@ -79,6 +87,9 @@ class CommandVersion(Command):
         super().__init__()
         self.name = "version"
         self.description = "Display HedgeDB version"
+
+    def help(self):
+        print("version - just display version and exit")
 
     def run(self, commands):
         print("HedgeDB Version {}\n".format(HedgeDB.version))

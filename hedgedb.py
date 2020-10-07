@@ -39,6 +39,19 @@ class Command:
         pass
 
 
+class CommandAnalyze(Command):
+    def __init__(self):
+        super().__init__()
+        self.name = "analyze"
+        self.description = "Analyze database schema"
+
+    def help(self):
+        print("analyze user:password@host:port/database")
+
+    def run(self, command):
+        print("Analyze")
+
+
 class CommandConnect(Command):
     def __init__(self):
         super().__init__()
@@ -79,7 +92,7 @@ class CommandHelp(Command):
         print("  {} command\n".format(sys.argv[0]))
         print("Commands:")
         for name, command in commands.items():
-            print("  {:<16} {}".format(name, command.description))
+            print("  {:<10} {}".format(name, command.description))
 
 
 class CommandVersion(Command):

@@ -24,7 +24,42 @@ class HedgeDB:
         if command_name == "help":
             self.commands["version"].run(self.commands)
 
-        self.commands[command_name].run(self.commands)
+        if command_name in self.commands:
+            self.commands[command_name].run(self.commands)
+        else:
+            print("ERROR: Unknown command '{}'".format(command_name))
+
+
+class Column:
+    def __init__(self, name):
+        self.name = name
+
+
+class Connector:
+    def __init__(self, user, password, host, port, database):
+        self.parameters = {
+            'user': user,
+            'password': password,
+            'host': host,
+            'port': port,
+            'database': database
+        }
+        self.connection = None
+        self.error = None
+
+    def connect(self):
+        try:
+            self.connection = mysql.connector.connect(**self.parameters)
+        except mysql.connector.Error as err:
+            self.error = err
+        else:
+            self.connection.close()
+
+
+class Table:
+    def __init__(self, name):
+        self.name = name
+        self.columns = []
 
 
 class Command:
@@ -68,13 +103,12 @@ class CommandConnect(Command):
         host = dsn[dsn.find("@")+1:dsn.find(":", dsn.find(":") + 1)]
         port = dsn[dsn.find(":", dsn.find(":") + 1) + 1:dsn.find("/")]
         database = dsn[dsn.find("/")+1:]
-        try:
-            conn = mysql.connector.connect(user=user, password=password, host=host, port=port, database=database)
+        connector = Connector(user, password, host, port, database)
+        connector.connect()
+        if connector.error is None:
             print("PASS")
-        except mysql.connector.Error as err:
-            print("FAIL {} {}".format(err.errno, err.msg))
         else:
-            conn.close()
+            print("FAIL {} {}".format(connector.error.errno, connector.error.msg))
 
 
 class CommandHelp(Command):

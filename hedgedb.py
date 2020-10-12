@@ -3,7 +3,6 @@ import mysql.connector
 
 
 class HedgeDB:
-
     version = 1.0
 
     def __init__(self):
@@ -30,20 +29,30 @@ class HedgeDB:
             print("ERROR: Unknown command '{}'".format(command_name))
 
 
+class Arguments:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def parse(argument):
+        dsn = argument
+        return {
+            'user': dsn[0:dsn.find(":")],
+            'password': dsn[dsn.find(":") + 1:dsn.find("@")],
+            'host': dsn[dsn.find("@") + 1:dsn.find(":", dsn.find(":") + 1)],
+            'port': dsn[dsn.find(":", dsn.find(":") + 1) + 1:dsn.find("/")],
+            'database': dsn[dsn.find("/") + 1:]
+        }
+
+
 class Column:
     def __init__(self, name):
         self.name = name
 
 
 class Connector:
-    def __init__(self, user, password, host, port, database):
-        self.parameters = {
-            'user': user,
-            'password': password,
-            'host': host,
-            'port': port,
-            'database': database
-        }
+    def __init__(self, parameters):
+        self.parameters = parameters
         self.connection = None
         self.error = None
 
@@ -52,13 +61,15 @@ class Connector:
             self.connection = mysql.connector.connect(**self.parameters)
         except mysql.connector.Error as err:
             self.error = err
-        else:
-            self.connection.close()
+
+    def disconnect(self):
+        self.connection.close()
 
 
 class Table:
-    def __init__(self, name):
+    def __init__(self, name, engine):
         self.name = name
+        self.engine = engine
         self.columns = []
 
 
@@ -85,6 +96,23 @@ class CommandAnalyze(Command):
 
     def run(self, command):
         print("Analyze")
+        arguments = Arguments()
+        parameters = arguments.parse(sys.argv[2])
+        connector = Connector(parameters)
+        connector.connect()
+        cursor = connector.connection.cursor()
+        query = "SELECT TABLE_NAME, ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = %s"
+        database = parameters['database']
+        print("Database: {}".format(database))
+        cursor.execute(query, [database])
+
+        tables = []
+        for (TABLE_NAME, ENGINE) in cursor:
+            table = Table(TABLE_NAME, ENGINE)
+            tables.append(table)
+            print("{} {}".format(table.name, table.engine))
+        cursor.close()
+        connector.disconnect()
 
 
 class CommandConnect(Command):
@@ -97,16 +125,13 @@ class CommandConnect(Command):
         print("connect user:password@host:port/database")
 
     def run(self, commands):
-        dsn = sys.argv[2]
-        user = dsn[0:dsn.find(":")]
-        password = dsn[dsn.find(":")+1:dsn.find("@")]
-        host = dsn[dsn.find("@")+1:dsn.find(":", dsn.find(":") + 1)]
-        port = dsn[dsn.find(":", dsn.find(":") + 1) + 1:dsn.find("/")]
-        database = dsn[dsn.find("/")+1:]
-        connector = Connector(user, password, host, port, database)
+        arguments = Arguments()
+        parameters = arguments.parse(sys.argv[2])
+        connector = Connector(parameters)
         connector.connect()
         if connector.error is None:
             print("PASS")
+            connector.disconnect()
         else:
             print("FAIL {} {}".format(connector.error.errno, connector.error.msg))
 

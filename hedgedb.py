@@ -102,6 +102,28 @@ class CommandAnalyze(Command):
         connector.connect()
         cursor = connector.connection.cursor()
         query = "SELECT TABLE_NAME, ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = %s"
+        stmt_columns = \
+            "SELECT " \
+            "ORDINAL_POSITION, " \
+            "COLUMN_NAME, " \
+            "IS_NULLABLE, " \
+            "DATA_TYPE, " \
+            "CHARACTER_MAXIMUM_LENGTH, " \
+            "CHARACTER_OCTET_LENGTH, " \
+            "NUMERIC_PRECISION, " \
+            "NUMERIC_SCALE, " \
+            "DATETIME_PRECISION, " \
+            "CHARACTER_SET_NAME, " \
+            "COLLATION_NAME, " \
+            "COLUMN_TYPE, " \
+            "COLUMN_KEY, " \
+            "EXTRA, " \
+            "PRIVILEGES, " \
+            "COLUMN_COMMENT, " \
+            "GENERATION_EXPRESSION, " \
+            "SRS_ID " \
+            "FROM information_schema.COLUMNS " \
+            "WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s ORDER BY ORDINAL_POSITION"
         database = parameters['database']
         print("Database: {}".format(database))
         cursor.execute(query, [database])

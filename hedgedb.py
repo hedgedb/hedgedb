@@ -189,4 +189,13 @@ class CommandVersion(Command):
         print("HedgeDB Version {}\n".format(HedgeDB.version))
 
 
+class Inspection:
+    def __init__(self):
+        self.engines = "SELECT ENGINE, COUNT(1) FROM information_schema.TABLES WHERE TABLE_SCHEMA = %s GROUP BY ENGINE"
+        self.charsets = "SELECT CHARACTER_SET_NAME, COUNT(1) FROM information_schema.TABLES " \
+                        "WHERE TABLE_SCHEMA = %s GROUP BY CHARACTER_SET_NAME"
+        self.collations = "SELECT TABLE_COLLATION, COUNT(1) FROM information_schema.TABLES " \
+                          "WHERE TABLE_SCHEMA = %s GROUP BY TABLE_COLLATION"
+
+
 hedge_db = HedgeDB()

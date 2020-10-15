@@ -96,37 +96,36 @@ class CommandAnalyze(Command):
 
     def run(self, command):
         print("Analyze")
-        arguments = Arguments()
-        parameters = arguments.parse(sys.argv[2])
+        parameters = Arguments.parse(sys.argv[2])
         connector = Connector(parameters)
         connector.connect()
         cursor = connector.connection.cursor()
-        query = "SELECT TABLE_NAME, ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = %s"
-        stmt_columns = \
-            "SELECT " \
-            "ORDINAL_POSITION, " \
-            "COLUMN_NAME, " \
-            "IS_NULLABLE, " \
-            "DATA_TYPE, " \
-            "CHARACTER_MAXIMUM_LENGTH, " \
-            "CHARACTER_OCTET_LENGTH, " \
-            "NUMERIC_PRECISION, " \
-            "NUMERIC_SCALE, " \
-            "DATETIME_PRECISION, " \
-            "CHARACTER_SET_NAME, " \
-            "COLLATION_NAME, " \
-            "COLUMN_TYPE, " \
-            "COLUMN_KEY, " \
-            "EXTRA, " \
-            "PRIVILEGES, " \
-            "COLUMN_COMMENT, " \
-            "GENERATION_EXPRESSION, " \
-            "SRS_ID " \
-            "FROM information_schema.COLUMNS " \
-            "WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s ORDER BY ORDINAL_POSITION"
+        tables_stmt = Q.select(["TABLE_NAME", "ENGINE"], "information_schema.TABLES", "TABLE_SCHEMA = %s")
+        columns_stmt = Q.select(
+            [
+                "ORDINAL_POSITION",
+                "COLUMN_NAME",
+                "IS_NULLABLE",
+                "DATA_TYPE",
+                "CHARACTER_MAXIMUM_LENGTH",
+                "CHARACTER_OCTET_LENGTH",
+                "NUMERIC_PRECISION",
+                "NUMERIC_SCALE",
+                "DATETIME_PRECISION",
+                "CHARACTER_SET_NAME",
+                "COLLATION_NAME",
+                "COLUMN_TYPE",
+                "COLUMN_KEY",
+                "EXTRA",
+                "PRIVILEGES",
+                "COLUMN_COMMENT",
+                "GENERATION_EXPRESSION",
+                "SRS_ID"
+            ], "information_schema.COLUMNS", "TABLE_SCHEMA = %s AND TABLE_NAME = %s", "ORDINAL_POSITION"
+        )
         database = parameters['database']
         print("Database: {}".format(database))
-        cursor.execute(query, [database])
+        cursor.execute(tables_stmt, [database])
 
         tables = []
         for (TABLE_NAME, ENGINE) in cursor:
@@ -147,8 +146,7 @@ class CommandConnect(Command):
         print("connect user:password@host:port/database")
 
     def run(self, commands):
-        arguments = Arguments()
-        parameters = arguments.parse(sys.argv[2])
+        parameters = Arguments.parse(sys.argv[2])
         connector = Connector(parameters)
         connector.connect()
         if connector.error is None:
@@ -196,6 +194,16 @@ class Inspection:
                         "WHERE TABLE_SCHEMA = %s GROUP BY CHARACTER_SET_NAME"
         self.collations = "SELECT TABLE_COLLATION, COUNT(1) FROM information_schema.TABLES " \
                           "WHERE TABLE_SCHEMA = %s GROUP BY TABLE_COLLATION"
+
+
+class Q:
+    @staticmethod
+    def select(expression, reference, condition, position = None):
+        if position is None:
+            stmt = "SELECT {} FROM {} WHERE {}".format(','.join(expression), reference, condition)
+        else:
+            stmt = "SELECT {} FROM {} WHERE {} ORDER BY {}".format(','.join(expression), reference, condition, position)
+        return stmt
 
 
 hedge_db = HedgeDB()

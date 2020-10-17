@@ -194,17 +194,18 @@ class Inspection:
                         "WHERE TABLE_SCHEMA = %s GROUP BY CHARACTER_SET_NAME"
         self.collations = "SELECT TABLE_COLLATION, COUNT(1) FROM information_schema.TABLES " \
                           "WHERE TABLE_SCHEMA = %s GROUP BY TABLE_COLLATION"
-        self.size = "SELECT TABLE_SCHEMA,
-       ROUND(SUM(DATA_LENGTH) / 1024 / 1024),
-       ROUND(SUM(INDEX_LENGTH) / 1024 / 1024),
-       ROUND(SUM(DATA_LENGTH + INDEX_LENGTH) / 1024 / 1024)
-FROM information_schema.TABLES
-GROUP BY TABLE_SCHEMA
-WITH ROLLUP"
+        self.size = "SELECT TABLE_SCHEMA," \
+                    "ROUND(SUM(DATA_LENGTH) / 1024 / 1024)," \
+                    "ROUND(SUM(INDEX_LENGTH) / 1024 / 1024)," \
+                    "ROUND(SUM(DATA_LENGTH + INDEX_LENGTH) / 1024 / 1024) " \
+                    "FROM information_schema.TABLES " \
+                    "GROUP BY TABLE_SCHEMA " \
+                    "WITH ROLLUP"
+
 
 class Q:
     @staticmethod
-    def select(expression, reference, condition, position = None):
+    def select(expression, reference, condition, position=None):
         if position is None:
             stmt = "SELECT {} FROM {} WHERE {}".format(','.join(expression), reference, condition)
         else:

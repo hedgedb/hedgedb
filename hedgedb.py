@@ -66,6 +66,18 @@ class Connector:
         self.connection.close()
 
 
+class Database:
+    def __init__(self, name):
+        self.name = name
+        self.table_name_len = 0
+        self.tables = []
+
+    def add_table(self, table):
+        self.tables.append(table)
+        if len(table.name) > self.table_name_len:
+            self.table_name_len = len(table.name)
+
+
 class Table:
     def __init__(self, name, engine):
         self.name = name
@@ -100,6 +112,7 @@ class CommandAnalyze(Command):
         connector = Connector(parameters)
         connector.connect()
         cursor = connector.connection.cursor()
+        database = Database(parameters['database'])
         tables_stmt = Q.select(["TABLE_NAME", "ENGINE"], "information_schema.TABLES", "TABLE_SCHEMA = %s")
         columns_stmt = Q.select(
             [
@@ -123,15 +136,14 @@ class CommandAnalyze(Command):
                 "SRS_ID"
             ], "information_schema.COLUMNS", "TABLE_SCHEMA = %s AND TABLE_NAME = %s", "ORDINAL_POSITION"
         )
-        database = parameters['database']
-        print("Database: {}".format(database))
-        cursor.execute(tables_stmt, [database])
+        print("Database: {}".format(database.name))
+        cursor.execute(tables_stmt, [database.name])
 
-        tables = []
         for (TABLE_NAME, ENGINE) in cursor:
             table = Table(TABLE_NAME, ENGINE)
-            tables.append(table)
+            database.add_table(table)
             print("{} {}".format(table.name, table.engine))
+        print("Database table name length = {}".format(database.table_name_len))
         cursor.close()
         connector.disconnect()
 
